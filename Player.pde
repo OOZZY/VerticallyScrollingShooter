@@ -1,4 +1,6 @@
 class Player extends Spaceship {
+  static final int fullHealth = 200;
+
   // stores all of player's projectiles
   ArrayList<Projectile> projectiles;
 
@@ -9,22 +11,107 @@ class Player extends Spaceship {
 
   // initializes this player
   Player() {
-    super(new PVector(width / 2, height), 20, 20, 100);
+    // initial position at bottom center of screen
+    super(new PVector(width / 2, height), 50, 50, fullHealth);
     projectiles = new ArrayList<Projectile>();
   }
 
   // fires three projectiles from player
   void shoot() {
-    projectiles.add(new Projectile(player.pos.get(), fprojectile1));
-    projectiles.add(new Projectile(player.pos.get(), fprojectile2));
-    projectiles.add(new Projectile(player.pos.get(), fprojectile3));
+    projectiles.add(new Projectile(this.pos.get(), fprojectile1));
+    projectiles.add(new Projectile(this.pos.get(), fprojectile2));
+    projectiles.add(new Projectile(this.pos.get(), fprojectile3));
+  }
+
+  // check for collisions between player projectiles and enemies/bosses
+  // update projectile/enemy/bosses and spawn hitsparks if they collide
+  // update score if enemies/bosses turn inactive
+  void checkProjectileEnemyCollisions() {
+    // basic enemies
+    for (int i = 0; i < projectiles.size(); ++i) {
+      for (int j = 0; j < enemies.size(); ++j) {
+        Projectile projectile = projectiles.get(i);
+        Enemy enemy = enemies.get(j);
+        if (projectile.hitSpaceship(enemy) && enemy.active) {
+          projectile.updateAfterHit();
+          enemy.updateAfterHit();
+          if (!enemy.active) {
+            score += enemyPoints;
+            enemiesKilled++;
+          }
+          sparks.add(new HitSpark(projectile.pos.get()));
+        }
+      }
+    }
+
+    // bosses
+    for (int i = 0; i < projectiles.size(); ++i) {
+      for (int j = 0; j < bosses.size(); ++j) {
+        Projectile projectile = projectiles.get(i);
+        Boss boss = bosses.get(j);
+        if (projectile.hitSpaceship(boss) && boss.active) {
+          projectile.updateAfterHit();
+          boss.updateAfterHit();
+          if (!boss.active) {
+            score += bossPoints;
+            bossesKilled++;
+          }
+          sparks.add(new HitSpark(projectile.pos.get()));
+        }
+      }
+    }
+  }
+
+  // check for collisions between player and enemies/bosses
+  // update player/enemy/bosses and spawn hitsparks if they collide
+  // update score if enemies/bosses turn inactive
+  void checkPlayerEnemyCollisions() {
+    // basic enemies
+    for (int i = 0; i < enemies.size(); ++i) {
+      Enemy enemy = enemies.get(i);
+      if (hitSpaceship(enemy) && enemy.active) {
+        updateAfterHit();
+        enemy.updateAfterHit();
+        if (!enemy.active) {
+          score += enemyPoints;
+          enemiesKilled++;
+        }
+        sparks.add(new HitSpark(pos.get()));
+      }
+    }
+
+    // bosses
+    for (int i = 0; i < bosses.size(); ++i) {
+      Boss boss = bosses.get(i);
+      if (hitSpaceship(boss) && boss.active) {
+        updateAfterHit();
+        boss.updateAfterHit();
+        if (!boss.active) {
+          score += bossPoints;
+          bossesKilled++;
+        }
+        sparks.add(new HitSpark(pos.get()));
+      }
+    }
+  }
+
+  // displays this player's health at given position. given position will be
+  // upper-left corner of the health bar
+  void displayHealth(float x, float y) {
+    pushMatrix();
+    translate(x, y);
+    rectMode(CORNER);
+    fill(255, 0, 0);
+    rect(0, 0, fullHealth, 20);
+    fill(0, 255, 0);
+    rect(0, 0, health, 20);
+    popMatrix();
   }
 
   // displays this player
   void display() {
     pushMatrix();
     translate(pos.x, pos.y);
-    pushMatrix();
     scale(w / 150, h / 200);
 
     // tip
@@ -64,18 +151,6 @@ class Player extends Spaceship {
     fill(100);
     quad(-25, -40, -10, -70, 10, -70, 25, -40);
 
-    // viewports
-    fill(200);
-    ellipse(-20, -10, 15, 15);
-    ellipse(-18, 10, 15, 15);
-    ellipse(-14, 30, 15, 15);
-    ellipse(20, -10, 15, 15);
-    ellipse(18, 10, 15, 15);
-    ellipse(14, 30, 15, 15);
-
-    popMatrix();
-    fill(0, 0, 255);
-    text(health, 10, 0);
     popMatrix();
   }
 }
